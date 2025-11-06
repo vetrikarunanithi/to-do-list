@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="todo-wrapper">
+    <div class="todo-container">
+      
+      <!-- Header -->
+      <div class="todo-header">
+        <svg xmlns="http://www.w3.org/2000/svg" class="todo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+            d="M9 12l2 2l4-4M7 20h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z" />
+        </svg>
+        <h1 class="todo-title">My To-Do List</h1>
+      </div>
+
+      <!-- Input -->
+      <div class="input-row">
+        <input id="taskInput" type="text" placeholder="Add a new task..." />
+        <button id="addBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="add-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+              d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters">
+        <button class="filter-btn active" onclick="filterTasks('all')">All</button>
+        <button class="filter-btn" onclick="filterTasks('active')">Active</button>
+        <button class="filter-btn" onclick="filterTasks('completed')">Completed</button>
+      </div>
+
+      <!-- Tasks -->
+      <ul id="taskList" class="task-list"></ul>
+
+      <!-- Footer -->
+      <div class="todo-footer">
+        <span id="taskCount">0 tasks remaining</span>
+        <button id="clearCompleted" onclick="clearCompleted()">Clear Completed</button>
+      </div>
+
+      <!-- Message (auto-collapsing area) -->
+      <div id="message" class="message"></div>
+    </div>
+  </div>
+
+   <script>
+    // Backend server URL
+    const API_URL = "http://localhost:8080";
+    
+    // Current filter (all, active, completed)
+    let currentFilter = 'all';
+
+    // Load all tasks from backend
+    async function loadTasks() {
+      try {
+        const response = await fetch(`${API_URL}/tasks`);
+        const tasks = await response.json();
+        
+        // Display tasks
+        displayTasks(tasks);
+        
+        // Update task count
+        updateTaskCount(tasks);
+        
+      } catch (error) {
+        showMessage("Error connecting to server. Is it running?", "error");
+        console.error(error);
+      }
+    }
+
+    // Display tasks on screen
+    function displayTasks(tasks) {
+      const taskList = document.getElementById("taskList");
+      taskList.innerHTML = "";
+
+      // Filter tasks based on current filter
+      let filteredTasks = tasks;
+      if (currentFilter === 'active') {
+        filteredTasks = tasks.filter(task => !task.completed);
+      } else if (currentFilter === 'completed') {
+        filteredTasks = tasks.filter(task => task.completed);
+      }
+
+      // Show message if no tasks
+      if (filteredTasks.length === 0) {
+        taskList.innerHTML = '<li class="empty-message">No tasks to show</li>';
+        return;
+      }
+
+      // Create list item for each task
+filteredTasks.forEach(task => {
+  const li = document.createElement("li");
+  li.className = task.completed ? 'completed' : '';
+
+  // Checkbox to mark complete
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = task.completed;
+  checkbox.onchange = () => toggleTask(task.id);
+
+  // Task text
+  const taskText = document.createElement("span");
+  taskText.textContent = task.text;
+  taskText.className = "task-text";
+
+  // Delete button (using SVG instead of emoji)
+  const deleteBtn = document.createElement("button");
+  deleteBtn.className = "delete-btn";
+  deleteBtn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" 
+         stroke-width="2" stroke="currentColor" class="delete-icon">
+      <path stroke-linecap="round" stroke-linejoin="round" 
+        d="M6 7h12M9 7V4h6v3m2 0v13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7z" />
+    </svg>
+  `;
+  deleteBtn.onclick = () => deleteTask(task.id);
+
+  // Add elements to list item
+  li.appendChild(checkbox);
+  li.appendChild(taskText);
+  li.appendChild(deleteBtn);
+  taskList.appendChild(li);
+});
+
+    }
+
+    // Add new task
+    async function addTask() {
+      const input = document.getElementById("taskInput");
+      const taskText = input.value.trim();
+
+      if (taskText === "") {
+        showMessage("Please enter a task!", "error");
+        return;
+      }
+
+      try {
+        await fetch(`${API_URL}/add?task=${encodeURIComponent(taskText)}`);
+        input.value = "";
+        loadTasks();
+        showMessage("Task added successfully!", "success");
+      } catch (error) {
+        showMessage("Error adding task", "error");
+      }
+    }
+
+    // Delete a task
+    async function deleteTask(taskId) {
+      try {
+        await fetch(`${API_URL}/delete?id=${taskId}`);
+        loadTasks();
+        showMessage("Task deleted!", "success");
+      } catch (error) {
+        showMessage("Error deleting task", "error");
+      }
+    }
+
+    // Toggle task completion
+    async function toggleTask(taskId) {
+      try {
+        await fetch(`${API_URL}/toggle?id=${taskId}`);
+        loadTasks();
+      } catch (error) {
+        showMessage("Error updating task", "error");
+      }
+    }
+
+    // Clear all completed tasks
+    async function clearCompleted() {
+      try {
+        await fetch(`${API_URL}/clear-completed`);
+        loadTasks();
+        showMessage("Completed tasks cleared!", "success");
+      } catch (error) {
+        showMessage("Error clearing tasks", "error");
+      }
+    }
+
+    // Filter tasks
+    function filterTasks(filter) {
+      currentFilter = filter;
+      
+      // Update active button
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      loadTasks();
+    }
+
+    // Update task count
+    function updateTaskCount(tasks) {
+      const activeTasks = tasks.filter(task => !task.completed).length;
+      const countElement = document.getElementById("taskCount");
+      countElement.textContent = `${activeTasks} task${activeTasks !== 1 ? 's' : ''} remaining`;
+    }
+
+    // Show message to user
+    function showMessage(text, type) {
+      const messageDiv = document.getElementById("message");
+      messageDiv.textContent = text;
+      messageDiv.className = `message ${type} show`;
+      
+      setTimeout(() => {
+        messageDiv.classList.remove('show');
+      }, 3000);
+    }
+
+    // Add task when button clicked
+    document.getElementById("addBtn").addEventListener("click", addTask);
+
+    // Add task when Enter key pressed
+    document.getElementById("taskInput").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        addTask();
+      }
+    });
+
+    // Load tasks when page opens
+    loadTasks();
+  </script>
+</body>
+</html>
+
+
+ 
