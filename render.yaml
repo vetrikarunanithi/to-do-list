@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: todo-java-backend
+    env: docker
+    plan: free
+    buildCommand: javac src/Main.java
+    startCommand: java -cp src Main
