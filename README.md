@@ -98,7 +98,7 @@ todo-app/
 ---
 
 ## Live Demo
-updating soon
+[Live now](https://to-do-list-eta-three-30.vercel.app/)
 
 ---
 
