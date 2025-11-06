@@ -86,6 +86,8 @@ todo-app/
 - Open frontend/index.html in your browser
 - Or use the Live Server extension in VS Code
 
+```
+```
 ## Usage
 - Enter a new task and click Add
 - Check or uncheck tasks to mark them complete or active
@@ -93,8 +95,13 @@ todo-app/
 - Click Clear Completed to remove all completed tasks
 - Filter between All, Active, and Completed tasks
 
+```
+```
 ## Live Demo
 https://docquix-web-app.onrender.com/
+
+```
+```
 
 ## Author
 **Vetriselvan Karunanithi**  
