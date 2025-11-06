@@ -98,7 +98,7 @@ todo-app/
 ---
 
 ## Live Demo
-https://docquix-web-app.onrender.com/
+updating soon
 
 ---
 
